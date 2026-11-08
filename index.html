@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="What players face in arenas, battlegrounds and world PvP, by realm and faction, from SoundAlerter's Global statistics.">
+<title>SoundAlerter Realm Stats</title>
+<style>
+:root {
+  --page: #07090d; --win: #0e1218; --card: #141922; --raise: #1b212c; --line: #262e3b; --grid: #1f2633;
+  --accent: #ff7d0a; --gold: #ffd100; --text: #e7eaf0; --muted: #96a0b2; --faint: #6b7487;
+  --arena: #d95926; --bgz: #3987e5; --world: #199e70;
+  --cc: #c98500; --def: #d55181; --int: #008300; --rem: #9085e9; --oth: #e66767;
+  --rise: #3987e5; --fall: #e66767; --mid: #383835; --fresh: #3ddc97; --stale: #c98500;
+  --head: "Friz Quadrata", "Friz Quadrata TT", Georgia, serif;
+  --ui: "Segoe UI", system-ui, sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+.view { display: grid; gap: 16px; }
+html { background: var(--page); }
+body { margin: 0; background: radial-gradient(1200px 500px at 50% -120px, #1a1408 0%, transparent 70%), var(--page); color: var(--text); font: 15px/1.5 var(--ui); }
+main { max-width: 1120px; margin: 0 auto; padding-block: 22px 72px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 16px; }
+h1, h2, h3 { font-family: var(--head); font-weight: 400; margin: 0; text-wrap: balance; }
+h1 { color: var(--accent); font-size: clamp(1.6rem, 4vw, 2.3rem); }
+h2 { color: var(--gold); font-size: 1.15rem; }
+p { margin: 0; color: var(--muted); max-width: 72ch; }
+.fine { font-size: .8rem; color: var(--muted); }
+.topbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.crumbs { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.card { background: linear-gradient(180deg, var(--win), #0c1016); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 12px; min-width: 0; align-content: start; }
+.card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 16px; }
+button, select, input[type=search] { font: .9rem var(--head); background: var(--raise); color: var(--text); border: 1px solid var(--line); border-radius: 3px; padding: 6px 12px; }
+button { cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+button:hover { background: #232b38; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #160b00; }
+button[aria-pressed="true"] { background: rgba(255,125,10,.14); border-color: var(--accent); color: var(--accent); }
+input[type=search] { font-family: var(--ui); min-width: 200px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.badge { font: 600 .74rem var(--ui); padding: 2px 9px; border-radius: 999px; display: inline-flex; gap: 6px; align-items: center; }
+.badge i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.fresh { color: var(--fresh); background: rgba(61,220,151,.1); } .stale { color: var(--stale); background: rgba(201,133,0,.12); }
+.faction { font: .8rem var(--ui); padding: 2px 9px; border-radius: 3px; }
+.Horde { background: #4a1010; color: #ffb3a8; } .Alliance { background: #0f2b52; color: #a8ccff; }
+.index { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 14px; }
+.realmcard { text-align: left; display: grid; gap: 10px; padding: 16px; border-radius: 6px; background: linear-gradient(180deg, var(--win), #0c1016); border: 1px solid var(--line); transition: transform .2s, border-color .2s; font-family: var(--ui); }
+.realmcard:hover { transform: translateY(-2px); border-color: #3a4352; background: linear-gradient(180deg, #121722, #0d1118); }
+.realmcard .rn { font: 1.5rem var(--head); display: flex; gap: 10px; align-items: center; }
+.realmcard .row { display: flex; justify-content: space-between; gap: 10px; align-items: end; }
+.realmcard .big { font: 1.6rem var(--head); }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 5px; padding: 12px 14px; display: grid; gap: 2px; position: relative; overflow: hidden; }
+.kpi b { font: 1.9rem/1.1 var(--head); font-variant-numeric: tabular-nums; }
+.kpi span { color: var(--muted); font-size: .8rem; }
+.kpi small { font-size: .78rem; font-variant-numeric: tabular-nums; }
+.kpi svg { position: absolute; right: 8px; bottom: 8px; }
+.up { color: var(--rise); } .down { color: var(--fall); } .flat { color: var(--muted); }
+.donutwrap { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 16px; align-items: center; }
+@media (max-width: 460px) { .donutwrap { grid-template-columns: 1fr; justify-items: center; } }
+.donut circle.seg { fill: none; stroke-width: 22; transition: stroke-dasharray .9s cubic-bezier(.2,.8,.2,1), opacity .2s, stroke-width .2s; cursor: pointer; }
+.donut circle.seg.dim { opacity: .3; } .donut circle.seg.hot { stroke-width: 26; }
+.donut .c1 { font: 1.6rem var(--head); fill: var(--text); text-anchor: middle; }
+.donut .c2 { font: .72rem var(--ui); fill: var(--muted); text-anchor: middle; }
+.legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.legend li { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; font-size: .88rem; padding: 3px 6px; border-radius: 3px; }
+.legend li.hot { background: var(--raise); }
+.legend i { width: 12px; height: 12px; border-radius: 3px; }
+.legend .v { font-variant-numeric: tabular-nums; } .legend .p { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 3.2em; text-align: right; }
+.controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.controls .label { color: var(--muted); font-size: .8rem; margin-right: 2px; }
+.chip { font: .78rem var(--ui); padding: 3px 10px 3px 8px; border-radius: 999px; display: inline-flex; gap: 6px; align-items: center; }
+.chip i { width: 8px; height: 8px; border-radius: 50%; }
+.chip[aria-pressed="false"] { opacity: .45; background: var(--raise); color: var(--muted); border-color: var(--line); }
+.zlegend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .8rem; color: var(--muted); }
+.zlegend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.srow { display: grid; grid-template-columns: 2.2rem minmax(0, 14rem) minmax(0, 1fr) 3.4rem; gap: 10px; align-items: center; padding: 5px 4px; border-bottom: 1px solid var(--grid); cursor: pointer; border-radius: 3px; }
+.srow:hover { background: rgba(255,255,255,.025); }
+.srow .rank { color: var(--faint); font-variant-numeric: tabular-nums; text-align: right; font-size: .85rem; }
+.srow .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.srow mark { background: rgba(255,209,0,.22); color: inherit; border-radius: 2px; }
+.tag { display: inline-block; font: 600 .62rem var(--ui); padding: 1px 5px; border-radius: 2px; margin-left: 7px; vertical-align: 1px; color: #0b0d12; }
+.track { height: 14px; display: flex; gap: 2px; }
+.track span { height: 100%; transition: width .7s cubic-bezier(.2,.8,.2,1), opacity .25s; }
+.track span:last-of-type { border-radius: 0 4px 4px 0; }
+.srow .num { text-align: right; font-variant-numeric: tabular-nums; }
+.heat { display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, 64px); gap: 3px; font-size: .84rem; align-items: center; }
+.heat .h { color: var(--muted); font-size: .74rem; text-align: center; }
+.heat .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px; cursor: pointer; }
+.heat .cell { height: 26px; border-radius: 3px; display: grid; place-items: center; font-variant-numeric: tabular-nums; font-size: .78rem; opacity: 0; transform: scale(.85); transition: opacity .4s, transform .4s cubic-bezier(.2,.8,.2,1); }
+.heat .cell.in { opacity: 1; transform: none; }
+.ramp { display: flex; align-items: center; gap: 8px; font-size: .74rem; color: var(--muted); }
+.ramp span.bar { width: 120px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #184f95, #3987e5, #86b6ef, #cde2fb); }
+.mix { display: grid; gap: 10px; }
+.mixrow { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 10px; align-items: center; font-size: .86rem; }
+.stack { display: flex; height: 22px; gap: 2px; }
+.stack span { height: 100%; display: grid; place-items: center; font: 600 .7rem var(--ui); color: #0b0d12; overflow: hidden; white-space: nowrap; transition: width .8s cubic-bezier(.2,.8,.2,1); }
+.stack span:first-child { border-radius: 4px 0 0 4px; } .stack span:last-child { border-radius: 0 4px 4px 0; }
+.slope line.l { stroke-width: 2; } .slope.dimmed g.s:not(.hot) { opacity: .25; } .slope g.s.hot line.l { stroke-width: 3.5; }
+.mover { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) 3.4rem; gap: 8px; align-items: center; font-size: .86rem; padding: 3px 0; cursor: pointer; }
+.mover .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+.dv { position: relative; height: 14px; }
+.dv::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--mid); }
+.dv span { position: absolute; top: 0; height: 100%; transition: width .8s cubic-bezier(.2,.8,.2,1); }
+.dv span.pos { left: calc(50% + 1px); background: var(--rise); border-radius: 0 4px 4px 0; }
+.dv span.neg { right: calc(50% + 1px); background: var(--fall); border-radius: 4px 0 0 4px; }
+.mover .d { font-variant-numeric: tabular-nums; text-align: right; }
+.empty { color: var(--muted); padding: 14px 4px; }
+.tip { position: fixed; z-index: 40; pointer-events: none; background: #0a0d12; border: 1px solid var(--line); border-radius: 5px; padding: 8px 10px; font-size: .82rem; box-shadow: 0 6px 24px rgba(0,0,0,.5); max-width: 260px; opacity: 0; transform: translateY(4px); transition: opacity .12s, transform .12s; }
+.tip.on { opacity: 1; transform: none; }
+.tip b { font-family: var(--head); font-weight: 400; display: block; margin-bottom: 3px; }
+.tip .r { display: flex; justify-content: space-between; gap: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tip .r em { font-style: normal; color: var(--text); }
+.scrim { position: fixed; inset: 0; background: rgba(4,6,9,.6); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 30; }
+.scrim.on { opacity: 1; pointer-events: auto; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 100vw); background: #0d1117; border-left: 1px solid var(--line); z-index: 31; transform: translateX(100%); transition: transform .32s cubic-bezier(.2,.8,.2,1); padding: calc(18px + env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px)) 18px 18px; overflow-y: auto; display: grid; gap: 14px; align-content: start; }
+.drawer.on { transform: none; }
+.drawer .dh { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
+.drawer .dn { font: 1.5rem var(--head); }
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.facts div { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 8px; }
+.facts b { display: block; font: 1.2rem var(--head); font-variant-numeric: tabular-nums; }
+.facts span { color: var(--muted); font-size: .74rem; }
+.modal { position: fixed; inset: 0; display: grid; place-items: center; z-index: 35; pointer-events: none; opacity: 0; transition: opacity .2s; padding: 16px; }
+.modal.on { opacity: 1; pointer-events: auto; }
+.modal .box { background: #0d1117; border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 12px; max-width: min(920px, 100%); }
+.modal img { width: 100%; border-radius: 4px; border: 1px solid var(--line); }
+.pipe { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; counter-reset: s; }
+.pipe div { background: var(--card); border: 1px solid var(--line); border-radius: 5px; padding: 10px 12px; position: relative; font-size: .85rem; color: var(--muted); }
+.pipe div b { display: block; color: var(--text); font: 1rem var(--head); margin-bottom: 2px; }
+details.paste summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
+textarea { width: 100%; min-height: 58px; background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 8px; font: .78rem/1.4 var(--mono); word-break: break-all; margin-top: 8px; }
+.fadein { animation: rise .55s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } .heat .cell { opacity: 1; transform: none; } }
+.notice { color: var(--muted); padding: 18px; border: 1px dashed var(--line); border-radius: 6px; }
+.box .actions { display: flex; gap: 8px; justify-content: flex-end; }
+</style>
+</head>
+<body>
+<main>
+<div class="topbar">
+  <div class="crumbs"><h1 id="title">SoundAlerter Realm Stats</h1></div>
+  <div class="crumbs" id="switcher" hidden>
+    <button type="button" id="toIndex">All realms</button>
+    <select id="realmSel" aria-label="Realm and faction"></select>
+    <select id="weekSel" aria-label="Week"></select>
+    <button type="button" id="shareCard">Share image</button>
+  </div>
+</div>
+
+<section id="indexView" class="view">
+  <p>What players face in arenas, battlegrounds and world PvP, by realm and faction, from SoundAlerter's Global statistics. Published automatically each week by volunteers' companions; no player names are ever included.</p>
+  <div class="index" id="index"></div>
+</section>
+
+<div id="dash" class="view" hidden>
+  <section class="card fadein">
+    <div class="card-head">
+      <div><span id="realm" style="font:2rem var(--head)"></span> <span class="faction" id="faction"></span></div>
+      <span id="freshBadge"></span>
+    </div>
+    <div class="fine" id="window"></div>
+    <div class="kpis" id="kpis"></div>
+  </section>
+  <div class="grid2">
+    <section class="card fadein"><div class="card-head"><h2>What the realm faces</h2><span class="fine">player sightings by spell type</span></div><div class="donutwrap" id="typeDonut"></div></section>
+    <section class="card fadein"><div class="card-head"><h2>Where it happens</h2><span class="fine">player sightings by zone type</span></div><div class="donutwrap" id="zoneDonut"></div></section>
+  </div>
+  <section class="card fadein">
+    <div class="card-head"><h2>Top spells</h2><input type="search" id="search" placeholder="Search spells" aria-label="Search spells"></div>
+    <div class="controls" id="sortControls"></div>
+    <div class="controls" id="typeControls"></div>
+    <div class="zlegend" id="zlegend"></div>
+    <div id="ranks"></div>
+    <p class="fine">Click a spell for its history.</p>
+  </section>
+  <div class="grid2">
+    <section class="card fadein"><div class="card-head"><h2>Hot spots</h2><div class="ramp">fewer <span class="bar"></span> more players</div></div><div class="heat" id="heat"></div></section>
+    <section class="card fadein"><div class="card-head"><h2>Type mix by zone</h2></div><div class="mix" id="mix"></div></section>
+  </div>
+  <section class="card fadein"><div class="card-head"><h2>Trends</h2><span class="fine" id="trendNote"></span></div><div class="grid2" id="trends"></div></section>
+</div>
+
+<section class="card">
+  <h2>How the data gets here</h2>
+  <div class="pipe">
+    <div><b>1 · In game</b>The addon keeps the realm's 7-day picture and saves its export line when you log out.</div>
+    <div><b>2 · Saved file</b>The game writes it to WTF\…\SavedVariables\SoundAlerter.lua.</div>
+    <div><b>3 · Companion</b>A small PowerShell script notices the change and reads only that line.</div>
+    <div><b>4 · GitHub</b>It commits data/&lt;realm&gt;/&lt;day&gt;.sag1 to this site's repository with a token that can write only here.</div>
+    <div><b>5 · This page</b>GitHub Pages serves the update within a few minutes; every day stays for trends.</div>
+  </div>
+  <details class="paste"><summary>Preview an export without publishing (in game: Statistics, Global tab, Export)</summary><textarea id="paste" spellcheck="false" placeholder="SAG1...."></textarea><div style="margin-top:8px"><button type="button" class="primary" id="previewBtn">Show</button> <span class="fine" id="status"></span></div></details>
+</section>
+</main>
+<div class="tip" id="tip" role="tooltip"></div>
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-label="Spell details"></aside>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Share image"><div class="box"><div class="card-head"><h2>Share image</h2><button type="button" id="closeModal">Close</button></div><img id="cardImg" alt="Share card"><div class="actions"><button type="button" id="copyLink">Copy link</button><button type="button" class="primary" id="saveCard">Download PNG</button></div></div></div>
+<script type="module">
+import { decodeSAG1 as decodeLine } from "./sag1.js";
+let SPELLS = {};
+const ZONES = [["arena", "Arena", "var(--arena)", "#d95926"], ["battleground", "Battlegrounds", "var(--bgz)", "#3987e5"], ["worldPvP", "World PvP", "var(--world)", "#199e70"]];
+const TYPES = [["CC", "Crowd control", "var(--cc)", "CC", "#c98500"], ["Defensive", "Defensive", "var(--def)", "DEF", "#d55181"], ["Interrupt", "Interrupt", "var(--int)", "INT", "#008300"], ["Removal", "Removal", "var(--rem)", "REM", "#9085e9"], ["Other", "Other", "var(--oth)", "OTH", "#e66767"]];
+const TYPE = Object.fromEntries(TYPES.map(t => [t[0], t]));
+const MOTION = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+const $ = id => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+const svgEl = (tag, attrs = {}) => { const e = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+const fmt = n => Math.round(n).toLocaleString();
+const pct = (v, t) => t ? v / t * 100 : 0;
+
+function decodeSAG1(input) { const text = String(input || "").trim(); const d = decodeLine(text); d.faction = d.faction || "Unknown"; d.text = text; return d; }
+
+let twins = new Set();
+const baseName = id => SPELLS[id] ? SPELLS[id][0] : "Spell " + id;
+const info = id => { const s = SPELLS[id]; const name = baseName(id) + (twins.has(baseName(id)) ? ` (${id})` : ""); return { name, category: s ? s[1] : "Other", group: s && TYPE[s[2]] ? s[2] : "Other" }; };
+function findTwins(d) { const seen = new Map(); d.spells.forEach(s => seen.set(baseName(s.id), (seen.get(baseName(s.id)) || 0) + 1)); twins = new Set([...seen].filter(([, n]) => n > 1).map(([k]) => k)); }
+const dateOf = day => new Date(day * 86400000).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+const sightings = (d, zone) => d.spells.reduce((a, s) => a + (zone ? (s.byZone[zone] || 0) : s.total), 0);
+function ago(ms) { const h = (Date.now() - ms) / 3600000; if (h < 1) return "updated just now"; if (h < 24) return `updated ${Math.round(h)} h ago`; const days = Math.round(h / 24); return `updated ${days} day${days === 1 ? "" : "s"} ago`; }
+function freshBadge(ms) { const stale = Date.now() - ms > 8 * 86400000; const b = el("span", "badge " + (stale ? "stale" : "fresh")); b.append(el("i"), stale ? "stale · " + ago(ms).replace("updated ", "last update ") : ago(ms)); return b; }
+
+const DATA = {};
+const MAX_DAYS = 120;
+const decoded = new Map();
+const get = text => { if (!decoded.has(text)) decoded.set(text, decodeSAG1(text)); return decoded.get(text); };
+async function fetchText(url) { const r = await fetch(url, { cache: "no-cache" }); if (!r.ok) throw new Error(url + " " + r.status); return r.text(); }
+async function loadRealm(r) {
+  if (!r || typeof r.slug !== "string" || !/^[a-z0-9-]+$/.test(r.slug) || !Array.isArray(r.days)) return;
+  const days = r.days.filter(Number.isInteger).sort((a, b) => a - b).slice(-MAX_DAYS);
+  const updated = Date.parse(r.updated) || null;
+  const list = (await Promise.all(days.map(async (day, i) => {
+    try {
+      const text = (await fetchText(`data/${r.slug}/${day}.sag1`)).trim(), d = get(text);
+      if (d.day !== day) return null;
+      return { day, published: i === days.length - 1 && updated ? updated : (day + 1) * 86400000, text };
+    } catch { return null; }
+  }))).filter(Boolean);
+  if (!list.length) return;
+  const last = get(list[list.length - 1].text);
+  DATA[`${last.realm}|${last.faction}`] = list;
+}
+async function load() {
+  try { SPELLS = JSON.parse(await fetchText("spells.json")).spells || {}; } catch { SPELLS = {}; }
+  let index = null;
+  try { index = JSON.parse(await fetchText("data/index.json")); } catch { index = null; }
+  await Promise.all((index && Array.isArray(index.realms) ? index.realms : []).map(loadRealm));
+}
+const weekBefore = (list, i) => { for (let j = i - 1; j >= 0; j--) if (list[j].day <= list[i].day - 7) return j; return -1; };
+
+const tip = $("tip");
+function showTip(evt, title, rows) {
+  tip.replaceChildren(el("b", null, title)); rows.forEach(([k, v]) => { const r = el("div", "r"); r.append(el("span", null, k), el("em", null, v)); tip.append(r); });
+  tip.classList.add("on"); const rect = evt.target.getBoundingClientRect(); const x = evt.clientX ?? rect.left + 10, y = evt.clientY ?? rect.top;
+  tip.style.left = Math.min(innerWidth - tip.offsetWidth - 8, Math.max(8, x + 14)) + "px"; tip.style.top = Math.min(innerHeight - tip.offsetHeight - 8, Math.max(8, y + 14)) + "px";
+}
+const hideTip = () => tip.classList.remove("on");
+function hover(node, fn) { node.addEventListener("pointermove", fn); node.addEventListener("pointerleave", hideTip); node.addEventListener("focus", fn); node.addEventListener("blur", hideTip); }
+function countUp(node, to) { if (!MOTION) { node.textContent = fmt(to); return; } const t0 = performance.now(); const step = now => { const p = Math.min(1, (now - t0) / 900); node.textContent = fmt(to * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
+const later = fn => MOTION ? requestAnimationFrame(() => requestAnimationFrame(fn)) : fn();
+
+function sparkline(values, w = 74, h = 26, color = "#3987e5") {
+  const max = Math.max(...values), min = Math.min(...values), span = max - min || 1;
+  const pts = values.map((v, i) => [values.length === 1 ? w / 2 : i / (values.length - 1) * (w - 6) + 3, h - 4 - (v - min) / span * (h - 8)]);
+  const svg = svgEl("svg", { width: w, height: h, viewBox: `0 0 ${w} ${h}`, "aria-hidden": "true" });
+  svg.append(svgEl("polyline", { points: pts.map(p => p.join(",")).join(" "), fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+  const last = pts[pts.length - 1]; svg.append(svgEl("circle", { cx: last[0], cy: last[1], r: 3.5, fill: color, stroke: "#141922", "stroke-width": 2 }));
+  return svg;
+}
+
+let key = null, week = null, current = null, previous = null, sortKey = "total", off = new Set(), query = "";
+
+function showIndex() {
+  $("indexView").hidden = false; $("dash").hidden = true; $("switcher").hidden = true;
+  const box = $("index"); box.replaceChildren();
+  if (!Object.keys(DATA).length) { box.append(el("div", "notice", "No realm has published yet. Statistics appear here once a player runs the SoundAlerter Companion and their realm has enough players for global numbers. You can still preview an export below.")); return; }
+  Object.entries(DATA).sort(([a], [b]) => a.localeCompare(b)).forEach(([k, list], i) => {
+    const latest = get(list[list.length - 1].text), [realm, faction] = k.split("|");
+    const top = [...latest.spells].sort((a, b) => b.total - a.total)[0];
+    findTwins(latest);
+    const c = el("button", "realmcard fadein"); c.type = "button"; c.style.animationDelay = i * 80 + "ms";
+    const rn = el("div", "rn"); rn.append(realm, Object.assign(el("span", "faction " + faction, faction)));
+    const row = el("div", "row"); const left = el("div"); left.append(el("div", "big", fmt(latest.players)), el("div", "fine", "players · " + list.length + " weeks"));
+    left.lastChild.textContent = "players · " + (list.length === 1 ? "1 day" : list.length + " days");
+    row.append(left, sparkline(list.map(x => get(x.text).players), 110, 36));
+    c.append(rn, freshBadge(list[list.length - 1].published), row, el("div", "fine", "Most seen: " + (top ? info(top.id).name : "-")));
+    c.onclick = () => open(k);
+    box.append(c);
+  });
+}
+
+function open(k, w) {
+  key = k; const list = DATA[k];
+  week = w ?? list.length - 1;
+  const before = weekBefore(list, week);
+  current = get(list[week].text); previous = before >= 0 ? get(list[before].text) : null;
+  history.replaceState(null, "", "#r=" + encodeURIComponent(k) + (week === list.length - 1 ? "" : "&d=" + list[week].day));
+  findTwins(current);
+  $("indexView").hidden = true; $("dash").hidden = false; $("switcher").hidden = false;
+  $("realmSel").hidden = false; $("weekSel").hidden = false;
+  const rs = $("realmSel"); rs.replaceChildren(...Object.keys(DATA).map(x => { const o = el("option", null, x.replace("|", " · ")); o.value = x; return o; })); rs.value = k;
+  const ws = $("weekSel"); ws.replaceChildren(...list.map((x, i) => { const o = el("option", null, "7 days to " + dateOf(x.day) + (i === list.length - 1 ? " (latest)" : "")); o.value = i; return o; }).reverse()); ws.value = week;
+  render(list[week].published);
+}
+
+function render(published) {
+  const d = current, old = previous, dash = $("dash");
+  dash.querySelectorAll(".fadein").forEach((n, i) => { n.style.animationDelay = (i * 70) + "ms"; n.classList.remove("fadein"); void n.offsetWidth; n.classList.add("fadein"); });
+  $("realm").textContent = d.realm; $("faction").textContent = d.faction; $("faction").className = "faction " + d.faction;
+  $("freshBadge").replaceChildren(published ? freshBadge(published) : el("span", "fine", "preview, not published"));
+  $("window").textContent = `7 days to ${dateOf(d.day)}` + (old ? ` · compared with the week to ${dateOf(old.day)}` : "");
+  kpis(d, old);
+  donut($("typeDonut"), TYPES.map(([k, n, c]) => ({ name: n, color: c, value: d.spells.filter(s => info(s.id).group === k).reduce((a, s) => a + s.total, 0) })), "sightings");
+  donut($("zoneDonut"), ZONES.map(([k, n, c]) => ({ name: n, color: c, value: sightings(d, k) })), "in zones");
+  ranks(); heat(); mix(); trends(d, old);
+}
+
+function kpis(d, old) {
+  const box = $("kpis"); box.replaceChildren();
+  const hist = key ? DATA[key].slice(0, week + 1).map(x => get(x.text).players) : [d.players];
+  const top = [...d.spells].sort((a, b) => b.total - a.total)[0];
+  const change = (now, was) => was == null ? null : [now - was, (now - was > 0 ? "▲ +" : now - was < 0 ? "▼ " : "") + fmt(now - was) + " vs last week"];
+  [{ v: d.players, l: "SoundAlerter players", c: change(d.players, old?.players), spark: hist.length > 1 ? hist : null }, { v: d.spells.length, l: "spells seen", c: change(d.spells.length, old?.spells.length) }, { v: sightings(d), l: "player sightings", c: change(sightings(d), old ? sightings(old) : null) }, { text: top ? info(top.id).name : "-", l: top ? `most seen, by ${fmt(top.total)} players` : "most seen" }].forEach(c => {
+    const k = el("div", "kpi"), b = el("b"); k.append(b, el("span", null, c.l));
+    if (c.text !== undefined) { b.textContent = c.text; b.style.fontSize = "1.25rem"; } else countUp(b, c.v);
+    if (c.c) k.append(el("small", c.c[0] > 0 ? "up" : c.c[0] < 0 ? "down" : "flat", c.c[1]));
+    if (c.spark) k.append(sparkline(c.spark));
+    box.append(k);
+  });
+}
+
+function donut(host, items, unit, size = 180) {
+  host.replaceChildren();
+  const total = items.reduce((a, x) => a + x.value, 0), R = 70, C = 2 * Math.PI * R, GAP = items.filter(x => x.value).length > 1 ? 2.5 : 0;
+  const svg = svgEl("svg", { class: "donut", viewBox: "0 0 180 180", width: size, height: size, role: "img", "aria-label": items.map(x => `${x.name} ${Math.round(pct(x.value, total))}%`).join(", ") });
+  const g = svgEl("g", { transform: "rotate(-90 90 90)" }); svg.append(g);
+  const c1 = svgEl("text", { x: 90, y: 92, class: "c1" }), c2 = svgEl("text", { x: 90, y: 112, class: "c2" });
+  const centre = (a, b) => { c1.textContent = a; c2.textContent = b; }; centre(fmt(total), unit); svg.append(c1, c2);
+  const legend = el("ul", "legend"); let acc = 0; const segs = [];
+  items.forEach(x => {
+    const len = total ? x.value / total * C : 0;
+    const seg = svgEl("circle", { class: "seg", cx: 90, cy: 90, r: R, stroke: x.color, "stroke-dasharray": `0 ${C}`, "stroke-dashoffset": -acc, tabindex: x.value ? 0 : -1 });
+    g.append(seg); segs.push(seg); const target = `${Math.max(0, len - GAP)} ${C}`; later(() => seg.setAttribute("stroke-dasharray", target)); acc += len;
+    const li = el("li"), sw = el("i"); sw.style.background = x.color; li.append(sw, el("span", null, x.name), el("span", "v", fmt(x.value)), el("span", "p", Math.round(pct(x.value, total)) + "%")); legend.append(li);
+    const on = e => { segs.forEach(s => s.classList.toggle("dim", s !== seg)); seg.classList.add("hot"); li.classList.add("hot"); centre(Math.round(pct(x.value, total)) + "%", x.name); if (e) showTip(e, x.name, [["players", fmt(x.value)], ["share", Math.round(pct(x.value, total)) + "%"]]); };
+    const offf = () => { segs.forEach(s => s.classList.remove("dim", "hot")); legend.querySelectorAll("li").forEach(l => l.classList.remove("hot")); centre(fmt(total), unit); hideTip(); };
+    seg.addEventListener("pointermove", on); seg.addEventListener("pointerleave", offf); seg.addEventListener("focus", on); seg.addEventListener("blur", offf);
+    li.addEventListener("pointerenter", () => on()); li.addEventListener("pointerleave", offf);
+  });
+  host.append(svg, legend);
+}
+
+const value = (s, k) => k === "total" ? s.total : (s.byZone[k] || 0);
+function highlight(name) {
+  const span = el("span");
+  if (!query) { span.textContent = name; return span; }
+  const i = name.toLowerCase().indexOf(query);
+  if (i < 0) { span.textContent = name; return span; }
+  span.append(name.slice(0, i), el("mark", null, name.slice(i, i + query.length)), name.slice(i + query.length));
+  return span;
+}
+function ranks() {
+  const sc = $("sortControls"); sc.replaceChildren(el("span", "label", "Sort"));
+  [["total", "All zones"], ...ZONES.map(z => [z[0], z[1]])].forEach(([k, n]) => { const b = el("button", null, n); b.type = "button"; b.setAttribute("aria-pressed", sortKey === k); b.onclick = () => { sortKey = k; ranks(); }; sc.append(b); });
+  const tc = $("typeControls"); tc.replaceChildren(el("span", "label", "Types"));
+  TYPES.forEach(([k, n, col]) => { const b = el("button", "chip"); b.type = "button"; const dot = el("i"); dot.style.background = col; b.append(dot, n); b.setAttribute("aria-pressed", !off.has(k)); b.onclick = () => { off.has(k) ? off.delete(k) : off.add(k); ranks(); }; tc.append(b); });
+  const zl = $("zlegend"); zl.replaceChildren(); ZONES.forEach(([, n, c]) => { const s = el("span"), i = el("i"); i.style.background = c; s.append(i, n); zl.append(s); });
+  const rows = current.spells.filter(s => !off.has(info(s.id).group) && value(s, sortKey) > 0 && (!query || info(s.id).name.toLowerCase().includes(query))).sort((a, b) => value(b, sortKey) - value(a, sortKey) || a.id - b.id);
+  const all = current.spells.filter(s => value(s, sortKey) > 0).sort((a, b) => value(b, sortKey) - value(a, sortKey));
+  const rankOf = new Map(all.map((s, i) => [s.id, i + 1]));
+  const host = $("ranks"); host.replaceChildren();
+  const peak = Math.max(1, ...rows.map(s => ZONES.reduce((a, [z]) => a + (s.byZone[z] || 0), 0)));
+  rows.slice(0, 20).forEach((s, i) => {
+    const sp = info(s.id), r = el("div", "srow"); r.tabIndex = 0;
+    const nm = el("div", "nm"); nm.append(highlight(sp.name)); const tg = el("span", "tag", TYPE[sp.group][3]); tg.style.background = TYPE[sp.group][2]; nm.append(tg);
+    const tr = el("div", "track"); ZONES.forEach(([z, , col]) => { const seg = el("span"); seg.style.background = col; seg.style.width = MOTION ? "0%" : ((s.byZone[z] || 0) / peak * 100) + "%"; seg.style.opacity = sortKey === "total" || sortKey === z ? 1 : .3; tr.append(seg); if (MOTION) setTimeout(() => seg.style.width = ((s.byZone[z] || 0) / peak * 100) + "%", 40 + i * 25); });
+    r.append(el("div", "rank", rankOf.get(s.id)), nm, tr, el("div", "num", fmt(value(s, sortKey))));
+    hover(r, e => showTip(e, sp.name, [["type", sp.category], ["players", fmt(s.total)], ...ZONES.map(([z, n]) => [n, fmt(s.byZone[z] || 0)])]));
+    r.onclick = () => drawer(s.id); r.onkeydown = e => { if (e.key === "Enter") drawer(s.id); };
+    host.append(r);
+  });
+  if (!rows.length) host.append(el("div", "empty", query ? `No spell matches "${query}".` : "No spells match. Turn a type back on."));
+}
+
+function lerpColor(stops, t) { const hx = stops.map(h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16))); const x = Math.max(0, Math.min(1, t)) * (hx.length - 1), i = Math.min(hx.length - 2, Math.floor(x)), f = x - i; return `rgb(${hx[i].map((v, k) => Math.round(v + (hx[i + 1][k] - v) * f)).join(",")})`; }
+function heat() {
+  const box = $("heat"); box.replaceChildren(el("div"), ...ZONES.map(([, n]) => el("div", "h", n === "Battlegrounds" ? "BGs" : n === "World PvP" ? "World" : n)));
+  const rows = [...current.spells].sort((a, b) => b.total - a.total).slice(0, 12), max = Math.max(1, ...rows.flatMap(s => ZONES.map(([z]) => s.byZone[z] || 0))), cells = [];
+  rows.forEach(s => {
+    const n = el("div", "n", info(s.id).name); n.onclick = () => drawer(s.id); box.append(n);
+    ZONES.forEach(([z, zn]) => { const v = s.byZone[z] || 0, t = v / max, c = el("div", "cell", v ? fmt(v) : ""); c.style.background = v ? lerpColor(["#184f95", "#3987e5", "#86b6ef", "#cde2fb"], t) : "#141922"; c.style.color = t > .55 ? "#0b0d12" : "#e7eaf0"; c.tabIndex = 0; hover(c, e => showTip(e, info(s.id).name, [[zn, fmt(v) + " players"]])); box.append(c); cells.push(c); });
+  });
+  cells.forEach((c, i) => MOTION ? setTimeout(() => c.classList.add("in"), 20 + i * 14) : c.classList.add("in"));
+}
+function mix() {
+  const box = $("mix"); box.replaceChildren();
+  [["All zones", null], ...ZONES.map(([z, n]) => [n, z])].forEach(([name, zone]) => {
+    const totals = TYPES.map(([k]) => current.spells.filter(s => info(s.id).group === k).reduce((a, s) => a + (zone ? (s.byZone[zone] || 0) : s.total), 0)), sum = totals.reduce((a, b) => a + b, 0) || 1;
+    const r = el("div", "mixrow"), bar = el("div", "stack");
+    TYPES.forEach(([, n, col], i) => { if (!totals[i]) return; const p = totals[i] / sum * 100, s = el("span", null, p >= 11 ? Math.round(p) + "%" : ""); s.style.background = col; s.style.width = MOTION ? "0%" : p + "%"; hover(s, e => showTip(e, `${n} in ${name}`, [["players", fmt(totals[i])], ["share", Math.round(p) + "%"]])); bar.append(s); later(() => s.style.width = p + "%"); });
+    r.append(el("div", null, name), bar); box.append(r);
+  });
+  const lg = el("div", "zlegend"); TYPES.forEach(([, n, c]) => { const s = el("span"), i = el("i"); i.style.background = c; s.append(i, n); lg.append(s); }); box.append(lg);
+}
+function spread(items, gap, top, bottom) { const s = [...items].sort((a, b) => a.y - b.y); for (let i = 1; i < s.length; i++) if (s[i].y < s[i - 1].y + gap) s[i].y = s[i - 1].y + gap; const over = s.length ? s[s.length - 1].y - bottom : 0; if (over > 0) { s[s.length - 1].y -= over; for (let i = s.length - 2; i >= 0; i--) if (s[i].y > s[i + 1].y - gap) s[i].y = s[i + 1].y - gap; } if (s.length && s[0].y < top) { const sh = top - s[0].y; s.forEach(x => x.y += sh); } }
+function trends(d, old) {
+  const host = $("trends"); host.replaceChildren();
+  if (!old) { $("trendNote").textContent = ""; host.append(el("div", "empty", "Trends need a published day at least 7 days before this one. They appear once this realm has a second week.")); return; }
+  $("trendNote").textContent = `players per 100, ${dateOf(old.day)} → ${dateOf(d.day)}`;
+  const per = (x, id) => { const s = x.spells.find(y => y.id === id); return s ? s.total / Math.max(1, x.players) * 100 : 0; };
+  const all = [...new Set([...d.spells, ...old.spells].map(s => s.id))].map(id => ({ id, was: per(old, id), now: per(d, id) })).map(x => ({ ...x, delta: x.now - x.was }));
+  const top = [...all].sort((a, b) => Math.max(b.now, b.was) - Math.max(a.now, a.was)).slice(0, 10);
+  const c1 = el("div"); c1.append(el("h3", "fine", "Top 10 spells, then and now"));
+  const W = 460, H = 300, L = 150, Rx = 310, max = Math.max(1, ...top.flatMap(x => [x.was, x.now])), y = v => 20 + (1 - v / max) * (H - 40);
+  const svg = svgEl("svg", { class: "slope", viewBox: `0 0 ${W} ${H}`, width: "100%", role: "img", "aria-label": "Slope chart" });
+  svg.append(svgEl("line", { x1: L, x2: L, y1: 12, y2: H - 12, stroke: "#262e3b" }), svgEl("line", { x1: Rx, x2: Rx, y1: 12, y2: H - 12, stroke: "#262e3b" }));
+  [[L, old.day], [Rx, d.day]].forEach(([x, day]) => { const t = svgEl("text", { x, y: H - 2, "text-anchor": "middle", fill: "#96a0b2", "font-size": 11 }); t.textContent = dateOf(day); svg.append(t); });
+  const rl = top.map(x => ({ x, y: y(x.now) + 4 })), ll = top.map(x => ({ x, y: y(x.was) + 4 })); spread(rl, 13, 16, H - 18); spread(ll, 13, 16, H - 18);
+  const rY = new Map(rl.map(r => [r.x, r.y])), lY = new Map(ll.map(r => [r.x, r.y])), groups = [];
+  top.forEach((x, i) => {
+    const col = Math.abs(x.delta) < 2 ? "#6b7487" : x.delta > 0 ? "#3987e5" : "#e66767", g = svgEl("g", { class: "s", tabindex: 0 });
+    const line = svgEl("line", { class: "l", x1: L, y1: y(x.was), x2: MOTION ? L : Rx, y2: MOTION ? y(x.was) : y(x.now), stroke: col });
+    const d2 = svgEl("circle", { cx: Rx, cy: y(x.now), r: 4, fill: col, stroke: "#0e1218", "stroke-width": 2, opacity: MOTION ? 0 : 1 });
+    const lab = svgEl("text", { x: Rx + 9, y: rY.get(x), fill: "#e7eaf0", "font-size": 11.5 }); lab.textContent = info(x.id).name.length > 20 ? info(x.id).name.slice(0, 19) + "…" : info(x.id).name;
+    const labL = svgEl("text", { x: L - 9, y: lY.get(x), fill: "#96a0b2", "font-size": 11, "text-anchor": "end" }); labL.textContent = x.was.toFixed(0);
+    g.append(line, svgEl("circle", { cx: L, cy: y(x.was), r: 4, fill: col, stroke: "#0e1218", "stroke-width": 2 }), d2, lab, labL); svg.append(g); groups.push(g);
+    if (MOTION) setTimeout(() => { const t0 = performance.now(); const step = now => { const p = Math.min(1, (now - t0) / 700), e = 1 - Math.pow(1 - p, 3); line.setAttribute("x2", L + (Rx - L) * e); line.setAttribute("y2", y(x.was) + (y(x.now) - y(x.was)) * e); if (p >= 1) d2.setAttribute("opacity", 1); else requestAnimationFrame(step); }; requestAnimationFrame(step); }, 120 + i * 60);
+    const on = e => { svg.classList.add("dimmed"); groups.forEach(o => o.classList.toggle("hot", o === g)); showTip(e, info(x.id).name, [["then", x.was.toFixed(1)], ["now", x.now.toFixed(1)]]); };
+    g.addEventListener("pointermove", on); g.addEventListener("pointerleave", () => { svg.classList.remove("dimmed"); groups.forEach(o => o.classList.remove("hot")); hideTip(); }); g.addEventListener("click", () => drawer(x.id));
+  });
+  c1.append(svg);
+  const c2 = el("div"); c2.append(el("h3", "fine", "Biggest movers"));
+  const movers = [...all].sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta)).slice(0, 10).sort((a, b) => b.delta - a.delta), span = Math.max(1, ...movers.map(x => Math.abs(x.delta)));
+  movers.forEach(x => { const r = el("div", "mover"), bar = el("div", "dv"), s = el("span", x.delta >= 0 ? "pos" : "neg"); s.style.width = MOTION ? "0%" : (Math.abs(x.delta) / span * 50) + "%"; bar.append(s); r.append(el("div", "nm", info(x.id).name), bar, el("div", "d " + (x.delta >= 0 ? "up" : "down"), (x.delta > 0 ? "+" : "") + x.delta.toFixed(0))); r.onclick = () => drawer(x.id); c2.append(r); later(() => s.style.width = (Math.abs(x.delta) / span * 50) + "%"); });
+  host.append(c1, c2);
+}
+
+function lineChart(points, color) {
+  const W = 400, H = 150, P = 28, max = Math.max(1, ...points.map(p => p.v));
+  const x = i => P + (points.length === 1 ? (W - 2 * P) / 2 : i / (points.length - 1) * (W - 2 * P)), y = v => H - 22 - v / max * (H - 40);
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", role: "img", "aria-label": "Players per 100 by week" });
+  [0, .5, 1].forEach(f => { const gy = y(max * f); svg.append(svgEl("line", { x1: P, x2: W - P, y1: gy, y2: gy, stroke: "#1f2633" })); const t = svgEl("text", { x: P - 6, y: gy + 4, "text-anchor": "end", fill: "#6b7487", "font-size": 10 }); t.textContent = Math.round(max * f); svg.append(t); });
+  const area = svgEl("path", { d: `M${x(0)},${y(0)} ` + points.map((p, i) => `L${x(i)},${y(p.v)}`).join(" ") + ` L${x(points.length - 1)},${y(0)} Z`, fill: color, "fill-opacity": .12 });
+  const path = svgEl("polyline", { points: points.map((p, i) => `${x(i)},${y(p.v)}`).join(" "), fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round" });
+  svg.append(area, path);
+  if (MOTION) { const len = 2000; path.style.strokeDasharray = len; path.style.strokeDashoffset = len; path.style.transition = "stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1)"; later(() => path.style.strokeDashoffset = 0); }
+  points.forEach((p, i) => { const dot = svgEl("circle", { cx: x(i), cy: y(p.v), r: i === points.length - 1 ? 4.5 : 3, fill: color, stroke: "#0d1117", "stroke-width": 2, tabindex: 0 }); hover(dot, e => showTip(e, "Week to " + dateOf(p.day), [["per 100 players", p.v.toFixed(1)], ["rank", "#" + p.rank]])); svg.append(dot); const t = svgEl("text", { x: x(i), y: H - 6, "text-anchor": "middle", fill: "#6b7487", "font-size": 10 }); t.textContent = dateOf(p.day); if (points.length <= 8 || i % 2 === 0) svg.append(t); });
+  return svg;
+}
+function drawer(id) {
+  const d = $("drawer"), sp = info(id), s = current.spells.find(x => x.id === id);
+  const list = key ? DATA[key].slice(0, week + 1).map(x => get(x.text)) : [current];
+  const points = list.map(w => { const sorted = [...w.spells].sort((a, b) => b.total - a.total); const hit = w.spells.find(x => x.id === id); return { day: w.day, v: hit ? hit.total / Math.max(1, w.players) * 100 : 0, rank: hit ? sorted.indexOf(hit) + 1 : "-" }; });
+  d.replaceChildren();
+  const head = el("div", "dh"), title = el("div"); title.append(el("div", "dn", sp.name)); const tg = el("span", "tag", TYPE[sp.group][1]); tg.style.background = TYPE[sp.group][2]; tg.style.marginLeft = 0; title.append(tg, el("span", "fine", `  ${sp.category} · spell ${id}`));
+  const close = el("button", null, "Close"); close.type = "button"; close.onclick = closeDrawer; head.append(title, close);
+  const facts = el("div", "facts"); const sorted = [...current.spells].sort((a, b) => b.total - a.total);
+  [[s ? fmt(s.total) : "0", "players this week"], [s ? "#" + (sorted.indexOf(s) + 1) : "-", "rank"], [s ? (s.total / current.players * 100).toFixed(0) : "0", "per 100 players"]].forEach(([v, l]) => { const f = el("div"); f.append(el("b", null, v), el("span", null, l)); facts.append(f); });
+  const zoneBox = el("div", "donutwrap"); donut(zoneBox, ZONES.map(([z, n, c]) => ({ name: n, color: c, value: s ? (s.byZone[z] || 0) : 0 })), "players", 150); zoneBox.style.gridTemplateColumns = "150px minmax(0,1fr)";
+  d.append(head, facts, el("h2", null, "Where"), zoneBox, el("h2", null, "Players per 100, by week"), lineChart(points, TYPE[sp.group][4]));
+  d.classList.add("on"); d.setAttribute("aria-hidden", "false"); $("scrim").classList.add("on"); close.focus();
+}
+function closeDrawer() { $("drawer").classList.remove("on"); $("drawer").setAttribute("aria-hidden", "true"); $("scrim").classList.remove("on"); }
+
+function shareCard() {
+  const d = current, c = document.createElement("canvas"); c.width = 1200; c.height = 630; const g = c.getContext("2d");
+  const bg = g.createLinearGradient(0, 0, 0, 630); bg.addColorStop(0, "#141008"); bg.addColorStop(.35, "#0e1218"); bg.addColorStop(1, "#07090d"); g.fillStyle = bg; g.fillRect(0, 0, 1200, 630);
+  g.fillStyle = "#ff7d0a"; g.font = "40px Georgia, serif"; g.fillText("SoundAlerter Realm Stats", 60, 86);
+  g.fillStyle = "#e7eaf0"; g.font = "56px Georgia, serif"; g.fillText(`${d.realm} ${d.faction}`, 60, 160);
+  g.fillStyle = "#96a0b2"; g.font = "24px Segoe UI, sans-serif"; g.fillText(`7 days to ${dateOf(d.day)} · ${fmt(d.players)} players · ${d.spells.length} spells`, 60, 200);
+  const top = [...d.spells].sort((a, b) => b.total - a.total).slice(0, 6), peak = Math.max(...top.map(s => ZONES.reduce((a, [z]) => a + (s.byZone[z] || 0), 0)));
+  g.font = "22px Segoe UI, sans-serif";
+  top.forEach((s, i) => { const y = 260 + i * 56; g.fillStyle = "#e7eaf0"; g.fillText(info(s.id).name.slice(0, 22), 60, y + 20); let x = 360; ZONES.forEach(([z, , , hex]) => { const w = (s.byZone[z] || 0) / peak * 320; g.fillStyle = hex; g.fillRect(x, y + 2, Math.max(0, w - 3), 24); x += w; }); g.fillStyle = "#96a0b2"; g.fillText(fmt(s.total), 720, y + 21); });
+  const totals = TYPES.map(([k]) => d.spells.filter(s => info(s.id).group === k).reduce((a, s) => a + s.total, 0)), sum = totals.reduce((a, b) => a + b, 0) || 1; let a0 = -Math.PI / 2;
+  totals.forEach((v, i) => { const a1 = a0 + v / sum * Math.PI * 2; if (a1 - a0 < .05) { a0 = a1; return; } g.beginPath(); g.arc(970, 390, 140, a0 + .015, a1 - .015); g.lineWidth = 46; g.strokeStyle = TYPES[i][4]; g.stroke(); a0 = a1; });
+  g.fillStyle = "#e7eaf0"; g.textAlign = "center"; g.font = "44px Georgia, serif"; g.fillText(fmt(sightings(d)), 970, 398); g.fillStyle = "#96a0b2"; g.font = "20px Segoe UI, sans-serif"; g.fillText("sightings by type", 970, 428); g.textAlign = "left";
+  TYPES.forEach(([, n, , , hex], i) => { g.fillStyle = hex; g.fillRect(800 + (i % 3) * 140, 560 + Math.floor(i / 3) * 30, 14, 14); g.fillStyle = "#96a0b2"; g.font = "17px Segoe UI, sans-serif"; g.fillText(n, 820 + (i % 3) * 140, 573 + Math.floor(i / 3) * 30); });
+  ZONES.forEach(([, n, , hex], i) => { g.fillStyle = hex; g.fillRect(60 + i * 170, 590, 14, 14); g.fillStyle = "#96a0b2"; g.fillText(n, 80 + i * 170, 603); });
+  $("cardImg").src = c.toDataURL("image/png"); $("modal").classList.add("on"); $("closeModal").focus();
+}
+function saveCard() {
+  const a = document.createElement("a"), d = current;
+  a.href = $("cardImg").src; a.download = `soundalerter-${(d.realm + "-" + d.faction).toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${new Date(d.day * 86400000).toISOString().slice(0, 10)}.png`;
+  document.body.append(a); a.click(); a.remove();
+}
+function copyLink() {
+  const url = location.href.split("#")[0] + (key ? location.hash : "#" + current.text);
+  const done = () => { $("copyLink").textContent = "Link copied"; setTimeout(() => $("copyLink").textContent = "Copy link", 1600); };
+  if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, () => prompt("Copy this link", url)); else prompt("Copy this link", url);
+}
+function preview(text) {
+  current = decodeSAG1(text); previous = null; key = null; week = 0; findTwins(current);
+  $("indexView").hidden = true; $("dash").hidden = false; $("switcher").hidden = false;
+  $("realmSel").hidden = true; $("weekSel").hidden = true;
+  render(null);
+}
+function route() {
+  const hash = decodeURIComponent(location.hash.slice(1));
+  if (hash.startsWith("SAG1.")) { try { preview(hash); return; } catch (e) { $("paste").value = hash; $("paste").closest("details").open = true; $("status").textContent = e.message; } }
+  const params = new URLSearchParams(location.hash.slice(1)), k = params.get("r");
+  if (k && DATA[k]) { const list = DATA[k], i = list.findIndex(x => String(x.day) === params.get("d")); open(k, i >= 0 ? i : undefined); return; }
+  showIndex();
+}
+
+$("toIndex").onclick = () => { history.replaceState(null, "", location.pathname + location.search); showIndex(); };
+$("copyLink").onclick = copyLink;
+$("saveCard").onclick = saveCard;
+window.addEventListener("hashchange", route);
+$("realmSel").onchange = e => open(e.target.value);
+$("weekSel").onchange = e => open(key, +e.target.value);
+$("shareCard").onclick = shareCard;
+$("closeModal").onclick = () => $("modal").classList.remove("on");
+$("scrim").onclick = closeDrawer;
+$("search").oninput = e => { query = e.target.value.trim().toLowerCase(); ranks(); };
+document.addEventListener("keydown", e => { if (e.key === "Escape") { closeDrawer(); $("modal").classList.remove("on"); } });
+$("previewBtn").onclick = () => { try { preview($("paste").value); history.replaceState(null, "", "#" + current.text); $("status").textContent = ""; scrollTo(0, 0); } catch (e) { $("status").textContent = e.message; } };
+$("index").append(el("div", "notice", "Loading…"));
+load().then(route, () => route());
+</script>
+</body>
+</html>
